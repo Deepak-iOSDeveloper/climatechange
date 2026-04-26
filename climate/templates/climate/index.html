@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>EcoTrace India · ML Climate Lab</title>
+{% load static %}
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0a0f0d;--s1:#111816;--s2:#182420;--border:#243c32;--t1:#2dd4aa;--t2:#a3e635;--t3:#38bdf8;--t4:#fb923c;--t5:#f472b6;--pu:#c084fc;--text:#ecfdf5;--muted:#7ab89a;--dim:#2d4a3e;--dark:#060a08}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 50% at 10% 10%,rgba(45,212,170,.07),transparent 60%),radial-gradient(ellipse 50% 40% at 90% 90%,rgba(56,189,248,.05),transparent 55%),radial-gradient(ellipse 40% 50% at 50% 50%,rgba(251,146,60,.03),transparent 65%);pointer-events:none;z-index:0}
+.wrap{max-width:1380px;margin:0 auto;padding:0 28px;position:relative;z-index:1}
+header{padding:32px 0 0;border-bottom:1px solid var(--border)}
+.nav{display:flex;align-items:center;justify-content:space-between;padding-bottom:18px;flex-wrap:wrap;gap:14px}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-mark{width:40px;height:40px;background:linear-gradient(135deg,var(--t1),var(--t2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.logo-text{font-family:'DM Serif Display',serif;font-size:20px;background:linear-gradient(90deg,var(--t1),var(--t2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.logo-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.15em;text-transform:uppercase}
+.nav-tags{display:flex;gap:8px;flex-wrap:wrap}
+.nav-tag{padding:4px 10px;border-radius:7px;border:1px solid var(--border);font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);background:var(--s1)}
+.hero{padding:44px 0 36px}
+.hero-eye{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.25em;color:var(--t1);text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.hero-eye::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
+h1{font-family:'DM Serif Display',serif;font-size:clamp(34px,5vw,64px);line-height:1.03;letter-spacing:-.03em;color:var(--text);max-width:680px}
+h1 em{font-style:italic;color:var(--t1)}
+.hero-body{font-size:15px;color:var(--muted);margin-top:14px;max-width:540px;line-height:1.7}
+.hero-cta{display:flex;align-items:center;gap:12px;margin-top:26px;flex-wrap:wrap}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;padding:12px 26px;background:linear-gradient(135deg,var(--t1),var(--t2));border:none;border-radius:10px;color:#060a08;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(45,212,170,.35)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-ghost{display:inline-flex;align-items:center;gap:8px;padding:11px 22px;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s}
+.btn-ghost:hover{border-color:var(--t1);color:var(--t1)}
+.btn-sm{padding:9px 18px;font-size:13px;border-radius:8px}
+.section{margin:48px 0 0}
+.sec-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.2em;color:var(--t1);text-transform:uppercase;margin-bottom:6px}
+.sec-title{font-family:'DM Serif Display',serif;font-size:26px;color:var(--text);margin-bottom:4px}
+.sec-sub{font-size:13px;color:var(--muted)}
+.sec-div{display:flex;align-items:center;gap:14px;margin-bottom:22px;margin-top:6px}
+.sec-line{flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
+/* Progress */
+#progress-bar{display:none;background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:20px 24px;margin:20px 0}
+.prog-hd{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.prog-dot{width:7px;height:7px;border-radius:50%;background:var(--t1);animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
+.prog-title{font-family:'DM Mono',monospace;font-size:11px;color:var(--t1);letter-spacing:.1em}
+.prog-track{height:4px;background:var(--border);border-radius:100px;overflow:hidden;margin-bottom:14px}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--t1),var(--t2));border-radius:100px;transition:width .7s ease;width:0%}
+.prog-steps{display:flex;gap:14px;flex-wrap:wrap}
+.step{font-family:'DM Mono',monospace;font-size:10px;color:var(--dim);display:flex;align-items:center;gap:5px;transition:color .3s}
+.step.done{color:var(--t1)}.step.active{color:var(--t2);animation:pulse 1.4s infinite}
+.step-dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+/* KPI */
+#stats-section{display:none}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:11px;margin-bottom:36px}
+.kpi{background:var(--s1);border:1px solid var(--border);border-radius:13px;padding:16px 18px;transition:border-color .2s,transform .2s;animation:up .5s ease both}
+.kpi:hover{border-color:var(--t1);transform:translateY(-2px)}
+.kpi-icon{font-size:18px;margin-bottom:7px}
+.kpi-val{font-family:'DM Serif Display',serif;font-size:24px;color:var(--t1);line-height:1;margin-bottom:3px}
+.kpi-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+/* Charts */
+#charts-section{display:none}
+.chart-full{margin-bottom:16px}
+.chart-card{background:var(--s1);border:1px solid var(--border);border-radius:16px;overflow:hidden;transition:transform .2s,box-shadow .2s;animation:up .4s ease both}
+.chart-card:hover{transform:translateY(-2px);box-shadow:0 16px 48px rgba(0,0,0,.45)}
+.chart-head{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.chart-name{font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px}
+.chart-tag{font-family:'DM Mono',monospace;font-size:9px;padding:3px 8px;border-radius:6px;border:1px solid var(--border);color:var(--muted);background:var(--s2)}
+.chart-img{padding:3px;background:var(--dark)}
+.chart-img img{width:100%;display:block;border-radius:11px;height:auto}
+/* ML Panel */
+#ml-section{margin:52px 0 0}
+.ml-panel{background:var(--s1);border:1px solid var(--border);border-radius:18px;overflow:hidden}
+.ml-ph{padding:22px 26px;border-bottom:1px solid var(--border);background:var(--s2);display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.ml-ph-title{font-family:'DM Serif Display',serif;font-size:20px;color:var(--text)}
+.ml-ph-sub{font-size:12px;color:var(--muted);margin-top:4px}
+.ml-body{padding:26px;display:grid;grid-template-columns:1fr 1fr;gap:26px}
+.fsec{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.15em;color:var(--t1);text-transform:uppercase;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.form-row{margin-bottom:12px}
+.form-label{font-size:12px;color:var(--muted);font-weight:500;margin-bottom:4px;display:block}
+.form-select,.form-input{width:100%;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color .2s}
+.form-select:focus,.form-input:focus{border-color:var(--t1)}
+.form-select option{background:var(--s2)}
+.hpbox{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-top:8px}
+.hptitle{font-family:'DM Mono',monospace;font-size:9px;color:var(--t2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)}
+.toggle-row:last-child{border-bottom:none}
+.tl{font-size:13px;color:var(--text)}.ts{font-size:11px;color:var(--muted);margin-top:1px}
+.toggle{position:relative;width:38px;height:20px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.tslider{position:absolute;inset:0;background:var(--border);border-radius:20px;cursor:pointer;transition:.3s}
+.tslider:before{content:'';position:absolute;height:14px;width:14px;left:3px;bottom:3px;background:var(--muted);border-radius:50%;transition:.3s}
+input:checked+.tslider{background:var(--t1)}
+input:checked+.tslider:before{transform:translateX(18px);background:#060a08}
+.input-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-top:8px}
+/* Result */
+#ml-result{display:none;padding:22px 26px;border-top:1px solid var(--border)}
+.pred-hero{background:linear-gradient(135deg,rgba(45,212,170,.1),rgba(163,230,53,.07));border:1px solid rgba(45,212,170,.25);border-radius:14px;padding:22px 26px;margin-bottom:18px;text-align:center;animation:glow 2.5s ease-in-out infinite}
+@keyframes glow{0%,100%{box-shadow:0 0 16px rgba(45,212,170,.08)}50%{box-shadow:0 0 36px rgba(45,212,170,.22)}}
+.pred-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--t1);letter-spacing:.15em;text-transform:uppercase;margin-bottom:8px}
+.pred-value{font-family:'DM Serif Display',serif;font-size:52px;color:var(--t2);line-height:1}
+.pred-unit{font-size:18px;color:var(--muted)}
+.pred-sub{font-size:12px;color:var(--muted);margin-top:6px}
+.result-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:18px}
+.rc{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+.rc-val{font-family:'DM Serif Display',serif;font-size:24px;color:var(--t1);line-height:1;margin-bottom:3px}
+.rc-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase}
+.imp-title{font-family:'DM Mono',monospace;font-size:10px;color:var(--t1);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px}
+.imp-row{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.imp-name{font-size:12px;color:var(--text);width:130px;flex-shrink:0;font-family:'DM Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.imp-bw{flex:1;height:7px;background:var(--border);border-radius:100px;overflow:hidden}
+.imp-b{height:100%;background:linear-gradient(90deg,var(--t1),var(--t2));border-radius:100px;transition:width .8s ease}
+.imp-val{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);width:46px;text-align:right}
+#residual-card{display:none;margin-top:18px}
+/* Empty */
+#empty-state{padding:72px 0;text-align:center}
+.eg{font-size:72px;display:block;margin-bottom:18px;animation:fl 5s ease-in-out infinite}
+@keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}}
+.et{font-family:'DM Serif Display',serif;font-size:28px;margin-bottom:12px}
+.eb{color:var(--muted);font-size:15px;line-height:1.7;max-width:440px;margin:0 auto 24px}
+.tags{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.tag{padding:6px 12px;border-radius:8px;border:1px solid var(--border);font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)}
+footer{border-top:1px solid var(--border);padding:22px 0;margin-top:56px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.ft{font-family:'DM Mono',monospace;font-size:10px;color:var(--dim)}
+.fls{display:flex;gap:16px}
+.fl{font-family:'DM Mono',monospace;font-size:10px;color:var(--dim);text-decoration:none;transition:color .2s}
+.fl:hover{color:var(--t1)}
+@keyframes up{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:900px){.ml-body{grid-template-columns:1fr}.input-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.input-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="nav">
+    <div class="logo">
+      <div class="logo-mark">🌿</div>
+      <div><div class="logo-text">EcoTrace India</div><div class="logo-sub">ML Climate Lab</div></div>
+    </div>
+    <div class="nav-tags">
+      <span class="nav-tag">771,264 rows</span><span class="nav-tag">8 cities</span>
+      <span class="nav-tag">2009–2019</span><span class="nav-tag">28 features</span>
+    </div>
+  </div>
+  <div class="hero">
+    <div class="hero-eye">India Weather Intelligence · Hourly Data</div>
+    <h1>Climate Analytics &amp;<br><em>ML Prediction Lab</em></h1>
+    <p class="hero-body">Explore 771K hourly weather records across 8 major Indian cities. Visualise patterns with scatter, line, bar, heatmap &amp; KDE gradient charts. Then train any ML model with custom hyperparameters and predict temperature live.</p>
+    <div class="hero-cta">
+      <button class="btn-primary" id="run-btn" onclick="runCharts()"><span>⚡</span><span>Generate All Charts</span></button>
+      <button class="btn-ghost" onclick="document.getElementById('ml-section').scrollIntoView({behavior:'smooth'})"><span>🤖</span><span>Jump to ML Predictor</span></button>
+    </div>
+  </div>
+</header>
+
+<div id="progress-bar">
+  <div class="prog-hd"><div class="prog-dot"></div><div class="prog-title">GENERATING VISUALISATIONS FROM 771K RECORDS…</div></div>
+  <div class="prog-track"><div class="prog-fill" id="prog-fill"></div></div>
+  <div class="prog-steps">
+    <div class="step" id="s1"><span class="step-dot"></span>Loading data</div>
+    <div class="step" id="s2"><span class="step-dot"></span>Scatter plots</div>
+    <div class="step" id="s3"><span class="step-dot"></span>Line charts</div>
+    <div class="step" id="s4"><span class="step-dot"></span>Bar charts</div>
+    <div class="step" id="s5"><span class="step-dot"></span>Heatmap</div>
+    <div class="step" id="s6"><span class="step-dot"></span>KDE gradient maps</div>
+  </div>
+</div>
+
+<div id="stats-section">
+  <div class="section">
+    <div class="sec-label">Dataset Overview</div>
+    <div class="sec-div"><div class="sec-line"></div></div>
+    <div class="kpi-grid" id="kpi-grid"></div>
+  </div>
+</div>
+
+<div id="empty-state">
+  <span class="eg">🌏</span>
+  <div class="et">Ready for Climate Intelligence</div>
+  <div class="eb">Click <strong>Generate All Charts</strong> to visualise 771,264 hourly weather records. Then use the ML Predictor below to train any model with custom hyperparameters.</div>
+  <div class="tags">
+    <span class="tag">📊 Scatter · Line · Bar</span><span class="tag">🔥 Correlation Heatmap</span>
+    <span class="tag">🌈 Seaborn KDE Gradients</span><span class="tag">🤖 7 ML Algorithms</span>
+    <span class="tag">⚙️ Hyperparameter Tuning</span><span class="tag">🔧 Preprocessing Pipeline</span>
+  </div>
+</div>
+
+<div id="charts-section">
+  <div class="section">
+    <div class="sec-label">Chart 1 · Scatter Analysis</div>
+    <div class="sec-div"><div class="sec-line"></div></div>
+    <div class="chart-full chart-card">
+      <div class="chart-head"><span class="chart-name">🔵 Scatter — Humidity/Wind vs Temperature by City</span><span class="chart-tag">SCATTER</span></div>
+      <div class="chart-img"><img id="img-scatter" src="" alt="Scatter"></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="sec-label">Chart 2 · Line Analysis</div>
+    <div class="sec-div"><div class="sec-line"></div></div>
+    <div class="chart-full chart-card">
+      <div class="chart-head"><span class="chart-name">📈 Line — Annual Trend + Monthly Seasonal Profile</span><span class="chart-tag">LINE</span></div>
+      <div class="chart-img"><img id="img-line" src="" alt="Line"></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="sec-label">Chart 3 · Bar Analysis</div>
+    <div class="sec-div"><div class="sec-line"></div></div>
+    <div class="chart-full chart-card">
+      <div class="chart-head"><span class="chart-name">📊 Bar — City-wise Climate Metrics Comparison</span><span class="chart-tag">BAR</span></div>
+      <div class="chart-img"><img id="img-bar" src="" alt="Bar"></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="sec-label">Chart 4 · Correlation Heatmap</div>
+    <div class="sec-div"><div class="sec-line"></div></div>
+    <div class="chart-full chart-card">
+      <div class="chart-head"><span class="chart-name">🔥 Heatmap — Feature Correlation Matrix</span><span class="chart-tag">HEATMAP</span></div>
+      <div class="chart-img"><img id="img-heatmap" src="" alt="Heatmap"></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="sec-label">Chart 5 · Seaborn KDE Gradient Maps</div>
+    <div class="sec-div"><div class="sec-line"></div></div>
+    <div class="chart-full chart-card">
+      <div class="chart-head"><span class="chart-name">🌈 KDE Gradient — Seaborn Density Distributions</span><span class="chart-tag">KDE</span></div>
+      <div class="chart-img"><img id="img-gradient" src="" alt="Gradient"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ML PREDICTOR -->
+<div id="ml-section">
+  <div class="section">
+    <div class="sec-label">Machine Learning Lab</div>
+    <div class="sec-title">Temperature Predictor</div>
+    <div class="sec-sub">Choose algorithm · tune hyperparameters · configure preprocessing · enter values · predict</div>
+    <div class="sec-div" style="margin-top:10px"><div class="sec-line"></div></div>
+  </div>
+  <div class="ml-panel">
+    <div class="ml-ph">
+      <div>
+        <div class="ml-ph-title">🤖 ML Configuration &amp; Live Prediction</div>
+        <div class="ml-ph-sub">Target: <strong style="color:var(--t1)">tempC</strong> (current temperature °C) · 60K training rows · 7 algorithms · full preprocessing pipeline</div>
+      </div>
+      <button class="btn-primary btn-sm" id="predict-btn" onclick="runPredict()"><span>🔮</span><span>Run Prediction</span></button>
+    </div>
+    <div class="ml-body">
+      <!-- LEFT -->
+      <div>
+        <div class="fsec">① Algorithm Selection</div>
+        <div class="form-row">
+          <label class="form-label">Machine Learning Algorithm</label>
+          <select class="form-select" id="algo-select" onchange="updateHparams()">
+            <option value="rf">🌲 Random Forest Regressor</option>
+            <option value="gbm">🚀 Gradient Boosting (GBM)</option>
+            <option value="linear">📏 Linear Regression</option>
+            <option value="ridge">🔺 Ridge Regression</option>
+            <option value="lasso">🔷 Lasso Regression</option>
+            <option value="dt">🌿 Decision Tree</option>
+            <option value="knn">🔵 K-Nearest Neighbours (KNN)</option>
+          </select>
+        </div>
+        <div class="hpbox">
+          <div class="hptitle">⚙️ Hyperparameters (Tuning)</div>
+          <div id="hparam-fields"></div>
+        </div>
+
+        <div class="fsec" style="margin-top:20px">② Preprocessing Pipeline</div>
+        <div>
+          <div class="toggle-row">
+            <div><div class="tl">Imputer</div><div class="ts">Fill missing values with median</div></div>
+            <label class="toggle"><input type="checkbox" id="use-imputer" checked><span class="tslider"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><div class="tl">One-Hot Encoding</div><div class="ts">Encode city as dummy columns</div></div>
+            <label class="toggle"><input type="checkbox" id="use-onehot"><span class="tslider"></span></label>
+          </div>
+        </div>
+        <div class="form-row" style="margin-top:12px">
+          <label class="form-label">Feature Scaling</label>
+          <select class="form-select" id="scaler-select">
+            <option value="standard">StandardScaler (Z-score normalisation)</option>
+            <option value="minmax">MinMaxScaler (0–1 range)</option>
+            <option value="none">No Scaling</option>
+          </select>
+        </div>
+      </div>
+      <!-- RIGHT -->
+      <div>
+        <div class="fsec">③ Input Feature Values <span style="color:var(--dim);font-weight:400">(for your prediction)</span></div>
+        <div class="input-grid" id="input-grid"></div>
+      </div>
+    </div>
+
+    <div id="ml-result">
+      <div class="fsec">④ Prediction Result</div>
+      <div class="pred-hero" id="pred-hero" style="display:none">
+        <div class="pred-label">Predicted Temperature</div>
+        <div class="pred-value" id="pred-val">—<span class="pred-unit">°C</span></div>
+        <div class="pred-sub" id="pred-sub"></div>
+      </div>
+      <div class="result-grid">
+        <div class="rc"><div class="rc-val" id="r-r2">—</div><div class="rc-label">R² Score</div></div>
+        <div class="rc"><div class="rc-val" id="r-rmse">—</div><div class="rc-label">RMSE (°C)</div></div>
+        <div class="rc"><div class="rc-val" id="r-mae">—</div><div class="rc-label">MAE (°C)</div></div>
+        <div class="rc"><div class="rc-val" id="r-train">—</div><div class="rc-label">Train Rows</div></div>
+        <div class="rc"><div class="rc-val" id="r-test">—</div><div class="rc-label">Test Rows</div></div>
+        <div class="rc"><div class="rc-val" id="r-feat">—</div><div class="rc-label">Features Used</div></div>
+      </div>
+      <div class="imp-title">Top Feature Importances / Coefficients</div>
+      <div id="imp-bars"></div>
+      <div id="residual-card" class="chart-card">
+        <div class="chart-head"><span class="chart-name">📐 Model Diagnostics — Actual vs Predicted + Residual Distribution</span><span class="chart-tag">DIAGNOSTICS</span></div>
+        <div class="chart-img"><img id="img-residuals" src="" alt="Residuals"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="wrap">
+<footer>
+  <div class="ft">Dataset: modified_data.csv · 771,264 rows · 8 Indian Cities · 2009–2019 · 28 Features</div>
+  <div class="fls">
+    <a href="https://scikit-learn.org" target="_blank" class="fl">scikit-learn ↗</a>
+    <a href="https://seaborn.pydata.org" target="_blank" class="fl">seaborn ↗</a>
+    <a href="https://pandas.pydata.org" target="_blank" class="fl">pandas ↗</a>
+  </div>
+</footer>
+</div>
+
+<script>
+const HPARAMS={
+  rf:[{k:'n_estimators',label:'n_estimators',val:'100',tip:'Number of trees'},{k:'max_depth',label:'max_depth',val:'10',tip:'Max depth'},{k:'min_samples_split',label:'min_samples_split',val:'2',tip:'Min samples split'}],
+  gbm:[{k:'n_estimators',label:'n_estimators',val:'100',tip:'Boosting rounds'},{k:'learning_rate',label:'learning_rate',val:'0.1',tip:'Step size'},{k:'max_depth',label:'max_depth',val:'4',tip:'Tree depth'}],
+  linear:[],
+  ridge:[{k:'alpha',label:'alpha',val:'1.0',tip:'Regularisation strength'}],
+  lasso:[{k:'alpha',label:'alpha',val:'0.1',tip:'Regularisation strength'},{k:'max_iter',label:'max_iter',val:'1000',tip:'Max iterations'}],
+  dt:[{k:'max_depth',label:'max_depth',val:'8',tip:'Max depth'},{k:'min_samples_split',label:'min_samples_split',val:'2',tip:'Min samples split'}],
+  knn:[{k:'n_neighbors',label:'n_neighbors',val:'5',tip:'Number of neighbours'},{k:'weights',label:'weights',val:'uniform',tip:'uniform or distance'}],
+};
+const INPUT_FEATURES=[
+  {k:'maxtempC',label:'Max Temp (°C)',val:'34'},{k:'mintempC',label:'Min Temp (°C)',val:'22'},
+  {k:'humidity',label:'Humidity (%)',val:'60'},{k:'windspeedKmph',label:'Wind Speed (km/h)',val:'10'},
+  {k:'pressure',label:'Pressure (hPa)',val:'1010'},{k:'cloudcover',label:'Cloud Cover (%)',val:'40'},
+  {k:'precipMM',label:'Precipitation (mm)',val:'0'},{k:'uvIndex',label:'UV Index',val:'5'},
+  {k:'DewPointC',label:'Dew Point (°C)',val:'18'},{k:'FeelsLikeC',label:'Feels Like (°C)',val:'30'},
+  {k:'visibility',label:'Visibility (km)',val:'10'},{k:'sunHour',label:'Sun Hours',val:'8'},
+  {k:'WindGustKmph',label:'Wind Gust (km/h)',val:'15'},{k:'WindChillC',label:'Wind Chill (°C)',val:'28'},
+  {k:'totalSnow_cm',label:'Snow (cm)',val:'0'},{k:'moon_illumination',label:'Moon Illumin.',val:'50'},
+  {k:'winddirDegree',label:'Wind Dir (°)',val:'180'},{k:'HeatIndexC',label:'Heat Index (°C)',val:'32'},
+];
+
+function updateHparams(){
+  const algo=document.getElementById('algo-select').value;
+  const box=document.getElementById('hparam-fields');
+  const params=HPARAMS[algo]||[];
+  if(!params.length){box.innerHTML='<div style="font-size:12px;color:var(--muted);font-style:italic">No hyperparameters for this model.</div>';return;}
+  const cols=params.length<=2?'1fr '.repeat(params.length).trim():'1fr 1fr';
+  box.innerHTML=`<div style="display:grid;grid-template-columns:${cols};gap:8px">`+
+    params.map(p=>`<div><label class="form-label">${p.label} <span style="color:var(--dim);font-size:10px">— ${p.tip}</span></label><input class="form-input" id="hp_${p.k}" value="${p.val}"></div>`).join('')+'</div>';
+}
+
+function buildInputGrid(){
+  document.getElementById('input-grid').innerHTML=INPUT_FEATURES.map(f=>
+    `<div><label class="form-label">${f.label}</label><input class="form-input" id="inp_${f.k}" value="${f.val}" type="number" step="any"></div>`
+  ).join('');
+}
+
+function getHparams(){
+  const algo=document.getElementById('algo-select').value,out={};
+  (HPARAMS[algo]||[]).forEach(p=>{const el=document.getElementById('hp_'+p.k);if(el)out[p.k]=el.value;});
+  return out;
+}
+function getInputData(){
+  const out={};
+  INPUT_FEATURES.forEach(f=>{const el=document.getElementById('inp_'+f.k);if(el)out[f.k]=el.value;});
+  return out;
+}
+
+async function runCharts(){
+  const btn=document.getElementById('run-btn'),prog=document.getElementById('progress-bar'),empty=document.getElementById('empty-state');
+  btn.disabled=true;btn.innerHTML='<span>⏳</span><span>Generating…</span>';
+  prog.style.display='block';empty.style.display='none';
+  const steps=['s1','s2','s3','s4','s5','s6'],pcts=[8,25,42,58,75,92];let si=0;
+  const timer=setInterval(()=>{
+    if(si>0)document.getElementById(steps[si-1]).className='step done';
+    if(si<steps.length){document.getElementById(steps[si]).className='step active';document.getElementById('prog-fill').style.width=pcts[si]+'%';si++;}
+    else clearInterval(timer);
+  },2000);
+  try{
+    const res=await fetch('/api/run/'),data=await res.json();
+    clearInterval(timer);steps.forEach(s=>document.getElementById(s).className='step done');
+    document.getElementById('prog-fill').style.width='100%';
+    if(data.status==='ok'){
+      renderKPI(data.stats);refreshCharts();
+      document.getElementById('stats-section').style.display='block';
+      document.getElementById('charts-section').style.display='block';
+      prog.style.display='none';
+      btn.innerHTML='<span>✅</span><span>Charts Ready</span>';btn.disabled=false;
+    }else{alert('Error: '+data.message);btn.innerHTML='<span>⚡</span><span>Retry</span>';btn.disabled=false;}
+  }catch(e){clearInterval(timer);alert('Server error — run: python manage.py runserver');btn.innerHTML='<span>⚡</span><span>Generate All Charts</span>';btn.disabled=false;}
+}
+
+function renderKPI(s){
+  const items=[
+    {icon:'📊',val:'771,264',label:'Total Records'},
+    {icon:'🏙',val:s.total_cities,label:'Indian Cities'},
+    {icon:'📅',val:s.year_range,label:'Year Range'},
+    {icon:'🌡',val:s.mean_temp+'°C',label:'Mean Temp'},
+    {icon:'🔥',val:s.max_temp+'°C',label:'All-time Max'},
+    {icon:'❄️',val:s.min_temp+'°C',label:'All-time Min'},
+    {icon:'💧',val:s.mean_humidity+'%',label:'Mean Humidity'},
+    {icon:'🏆',val:s.hottest_city,label:'Hottest City'},
+  ];
+  document.getElementById('kpi-grid').innerHTML=items.map((k,i)=>
+    `<div class="kpi" style="animation-delay:${i*.06}s"><div class="kpi-icon">${k.icon}</div><div class="kpi-val">${k.val}</div><div class="kpi-label">${k.label}</div></div>`
+  ).join('');
+}
+
+function refreshCharts(){
+  const t=Date.now();
+  ['scatter','line','bar','heatmap','gradient'].forEach(n=>{const img=document.getElementById('img-'+n);if(img)img.src=`/media/charts/${n}.png?t=${t}`;});
+}
+
+async function runPredict(){
+  const btn=document.getElementById('predict-btn');
+  btn.disabled=true;btn.innerHTML='<span>⏳</span><span>Training…</span>';
+  const payload={
+    algorithm:document.getElementById('algo-select').value,
+    hyperparams:getHparams(),
+    use_scaler:document.getElementById('scaler-select').value,
+    use_imputer:document.getElementById('use-imputer').checked,
+    use_onehot:document.getElementById('use-onehot').checked,
+    input_data:getInputData(),target:'tempC',
+  };
+  try{
+    const res=await fetch('/api/predict/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data=await res.json();
+    if(data.status==='ok'){renderResult(data.result);btn.innerHTML='<span>🔮</span><span>Run Again</span>';btn.disabled=false;}
+    else{alert('Error: '+data.message);btn.innerHTML='<span>🔮</span><span>Run Prediction</span>';btn.disabled=false;}
+  }catch(e){alert('Server error');btn.innerHTML='<span>🔮</span><span>Run Prediction</span>';btn.disabled=false;}
+}
+
+function renderResult(r){
+  document.getElementById('ml-result').style.display='block';
+  document.getElementById('r-r2').textContent=r.r2;
+  document.getElementById('r-rmse').textContent=r.rmse;
+  document.getElementById('r-mae').textContent=r.mae;
+  document.getElementById('r-train').textContent=r.train_size.toLocaleString();
+  document.getElementById('r-test').textContent=r.test_size.toLocaleString();
+  document.getElementById('r-feat').textContent=r.features_used;
+  if(r.user_prediction!==null){
+    document.getElementById('pred-hero').style.display='block';
+    document.getElementById('pred-val').innerHTML=r.user_prediction+'<span class="pred-unit">°C</span>';
+    document.getElementById('pred-sub').textContent=`Algorithm: ${r.algorithm.toUpperCase()} · Scaler: ${r.scaler} · Features: ${r.features_used}`;
+  }
+  const impDiv=document.getElementById('imp-bars');
+  if(r.importances&&Object.keys(r.importances).length){
+    const vals=Object.values(r.importances),mx=Math.max(...vals);
+    impDiv.innerHTML=Object.entries(r.importances).map(([k,v])=>
+      `<div class="imp-row"><span class="imp-name">${k}</span><div class="imp-bw"><div class="imp-b" style="width:${Math.round(v/mx*100)}%"></div></div><span class="imp-val">${v}</span></div>`
+    ).join('');
+  }else{impDiv.innerHTML='<div style="font-size:12px;color:var(--muted)">Coefficients not displayed for this algorithm.</div>';}
+  document.getElementById('residual-card').style.display='block';
+  document.getElementById('img-residuals').src='/media/charts/residuals.png?t='+Date.now();
+  document.getElementById('ml-result').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+updateHparams();buildInputGrid();
+</script>
+</body>
+</html>
