@@ -12,6 +12,7 @@ from sklearn.neighbors import KNeighborsRegressor
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 from sklearn.model_selection import train_test_split
+from scipy import stats
 import os, warnings, inspect
 warnings.filterwarnings('ignore')
 
@@ -136,57 +137,286 @@ def chart_bar(df):
 # CHART 4 — Heatmap
 def chart_heatmap(df):
     cols = ['tempC','maxtempC','mintempC','humidity','windspeedKmph','pressure',
-            'cloudcover','precipMM','FeelsLikeC','DewPointC','uvIndex','visibility','WindGustKmph','sunHour']
+            'cloudcover','precipMM','FeelsLikeC','DewPointC','uvIndex','visibility',
+            'WindGustKmph','sunHour']
+    cols = [c for c in cols if c in df.columns]
     corr = df[cols].corr()
-    fig, ax = plt.subplots(figsize=(13,10)); _sf(fig); ax.set_facecolor(CARD)
+    temp_corr = corr['tempC'].drop('tempC')
+    sorted_corr = temp_corr.abs().sort_values(ascending=False)
+    top_feature = sorted_corr.index[0]
+    top_value = temp_corr[top_feature]
+    print(f"\n🔥 Most correlated feature with tempC: {top_feature} ({top_value:.2f})")
+    print("\n📊 Top 5 correlations with tempC:")
+    print(temp_corr.loc[sorted_corr.index].head(5))
+    fig, ax = plt.subplots(figsize=(13,10))
+    _sf(fig)
+    ax.set_facecolor(CARD)
     mask = np.zeros_like(corr, dtype=bool)
     mask[np.triu_indices_from(mask)] = True
     cmap = sns.diverging_palette(145, 20, as_cmap=True)
-    sns.heatmap(corr, mask=mask, ax=ax, cmap=cmap, annot=True, fmt='.2f',
-                annot_kws={'size':8,'color':'white','weight':'bold'},
-                linewidths=0.5, linecolor=BG, vmin=-1, vmax=1,
-                cbar_kws={'label':'Correlation','shrink':0.8})
-    ax.set_title('🔥  Feature Correlation Heatmap — All Climate Variables', color=TEXT, fontsize=13, fontweight='bold', pad=14)
+    sns.heatmap(
+        corr, mask=mask, ax=ax, cmap=cmap, annot=True, fmt='.2f',
+        annot_kws={'size':8,'color':'white','weight':'bold'},
+        linewidths=0.5, linecolor=BG, vmin=-1, vmax=1,
+        cbar_kws={'label':'Correlation','shrink':0.8}
+    )
+    x_idx = cols.index(top_feature)
+    y_idx = cols.index('tempC')
+    ax.text(x_idx + 0.5, y_idx + 0.5, "★", ha='center', va='center', color='yellow', fontsize=16, fontweight='bold')
+    ax.set_title('🔥 Feature Correlation Heatmap — All Climate Variables', color=TEXT, fontsize=13, fontweight='bold', pad=14)
     ax.tick_params(colors=TEXT, labelsize=9)
     cb = ax.collections[0].colorbar
     cb.set_label('Correlation', color=MUTED, fontsize=9)
     cb.ax.yaxis.set_tick_params(color=MUTED, labelcolor=MUTED)
     cb.outline.set_color(BORDER)
-    plt.tight_layout(); _save(fig,'heatmap')
-
-# CHART 5 — Gradient KDE
-def chart_gradient(df):
-    s = df.sample(min(8000,len(df)), random_state=1)
-    fig, axes = plt.subplots(1,3, figsize=(16,6)); _sf(fig)
-    for ax in axes: ax.set_facecolor(CARD)
-    sns.kdeplot(data=s, x='humidity', y='tempC', ax=axes[0], fill=True, cmap='YlOrRd', thresh=0.05, levels=15)
-    _sa(axes[0],'🌈  KDE: Humidity vs Temperature','Humidity (%)','Temp (°C)')
-    sns.kdeplot(data=s, x='windspeedKmph', y='pressure', ax=axes[1], fill=True, cmap='GnBu', thresh=0.05, levels=15)
-    _sa(axes[1],'🌊  KDE: Wind Speed vs Pressure','Wind Speed (km/h)','Pressure (hPa)')
-    sns.kdeplot(data=s, x='DewPointC', y='FeelsLikeC', ax=axes[2], fill=True, cmap='PuRd', thresh=0.05, levels=15)
-    _sa(axes[2],'💜  KDE: Dew Point vs Feels-Like','Dew Point (°C)','Feels Like (°C)')
     plt.tight_layout()
-    fig.suptitle('GRADIENT DENSITY MAPS — Seaborn KDE (Kernel Density Estimation)', color=T3, fontsize=10, fontweight='bold', y=1.01)
-    _save(fig,'gradient')
+    _save(fig, 'heatmap')
+
+# CHART 5 — Box Plot
+def chart_boxplot(df):
+    fig, axes = plt.subplots(1, 3, figsize=(16,6)); _sf(fig)
+    for ax in axes:
+        ax.set_facecolor(CARD)
+    sns.boxplot(data=df, x='city', y='tempC', ax=axes[0], palette=CITY_COLORS)
+    _sa(axes[0], '🌡 Temperature Distribution by City (Outliers)', 'City', 'Temp (°C)')
+    axes[0].tick_params(axis='x', rotation=30)
+    sns.boxplot(data=df, y='humidity', ax=axes[1], color=T2)
+    _sa(axes[1], '💧 Humidity Distribution (Outliers)', '', 'Humidity (%)')
+    sns.boxplot(data=df, y='windspeedKmph', ax=axes[2], color=T3)
+    _sa(axes[2], '💨 Wind Speed Distribution (Outliers)', '', 'Wind Speed (km/h)')
+    plt.tight_layout()
+    fig.suptitle('BOX PLOT ANALYSIS — Outlier Detection Across Climate Features', color=T3, fontsize=10, fontweight='bold', y=1.01)
+    _save(fig, 'boxplot')
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# CHART 6 — HYPOTHESIS TESTING
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Four hypothesis tests are run:
+#
+#   TEST 1 — Independent T-Test (Two cities)
+#     H0: Mean temperature of Delhi == Mean temperature of Bengaluru
+#     H1: Mean temperatures are significantly different
+#
+#   TEST 2 — One-Way ANOVA (All 8 cities)
+#     H0: Mean temperature is the same across all 8 Indian cities
+#     H1: At least one city has a significantly different mean temperature
+#
+#   TEST 3 — Mann-Whitney U Test (Non-parametric, two seasons)
+#     H0: Temperature distribution in Monsoon == Summer (Spring)
+#     H1: The two season distributions differ significantly
+#
+#   TEST 4 — Chi-Square Test (Season vs City — frequency table)
+#     H0: Season distribution is independent of city
+#     H1: Season and city are NOT independent (association exists)
+#
+#   Alpha level: 0.05 for all tests
+# ══════════════════════════════════════════════════════════════════════════════
+
+def chart_hypothesis(df):
+    ALPHA = 0.05
+    results = {}
+
+    # ── TEST 1: Independent T-Test ─────────────────────────────────────────
+    delhi     = df[df['city'] == 'Delhi']['tempC'].dropna()
+    bengaluru = df[df['city'] == 'Bengaluru']['tempC'].dropna()
+    t_stat, t_p = stats.ttest_ind(delhi, bengaluru, equal_var=False)  # Welch's T-test
+    results['ttest'] = {
+        'name'   : "T-Test: Delhi vs Bengaluru",
+        'H0'     : "H₀: Mean temp of Delhi = Mean temp of Bengaluru",
+        'H1'     : "H₁: Mean temps are significantly different",
+        'stat'   : round(t_stat, 4),
+        'p_value': round(t_p, 6),
+        'reject' : t_p < ALPHA,
+        'color'  : T4 if t_p < ALPHA else T1,
+    }
+
+    # ── TEST 2: One-Way ANOVA ──────────────────────────────────────────────
+    city_groups = [df[df['city'] == c]['tempC'].dropna() for c in CITIES]
+    f_stat, f_p = stats.f_oneway(*city_groups)
+    results['anova'] = {
+        'name'   : "ANOVA: All 8 Cities",
+        'H0'     : "H₀: Mean temp is equal across all 8 cities",
+        'H1'     : "H₁: At least one city has different mean temp",
+        'stat'   : round(f_stat, 4),
+        'p_value': round(f_p, 6),
+        'reject' : f_p < ALPHA,
+        'color'  : T4 if f_p < ALPHA else T1,
+    }
+
+    # ── TEST 3: Mann-Whitney U (Non-parametric) ────────────────────────────
+    monsoon = df[df['season'] == 'Monsoon']['tempC'].dropna()
+    spring  = df[df['season'] == 'Spring']['tempC'].dropna()
+    u_stat, u_p = stats.mannwhitneyu(monsoon, spring, alternative='two-sided')
+    results['mannwhitney'] = {
+        'name'   : "Mann-Whitney: Monsoon vs Spring",
+        'H0'     : "H₀: Temp distribution in Monsoon = Spring",
+        'H1'     : "H₁: Distributions are significantly different",
+        'stat'   : round(u_stat, 4),
+        'p_value': round(u_p, 6),
+        'reject' : u_p < ALPHA,
+        'color'  : T4 if u_p < ALPHA else T1,
+    }
+
+    # ── TEST 4: Chi-Square Test ────────────────────────────────────────────
+    contingency = pd.crosstab(df['city'], df['season'])
+    chi2_stat, chi2_p, dof, expected = stats.chi2_contingency(contingency)
+    results['chisquare'] = {
+        'name'   : "Chi-Square: City vs Season",
+        'H0'     : "H₀: Season distribution is independent of city",
+        'H1'     : "H₁: Season distribution depends on city",
+        'stat'   : round(chi2_stat, 4),
+        'p_value': round(chi2_p, 6),
+        'reject' : chi2_p < ALPHA,
+        'color'  : T4 if chi2_p < ALPHA else T1,
+    }
+
+    # ── PLOT ──────────────────────────────────────────────────────────────
+    fig = plt.figure(figsize=(18, 14)); _sf(fig)
+    fig.suptitle(
+        '🔬 HYPOTHESIS TESTING — Statistical Significance of Climate Differences (α = 0.05)',
+        color=T1, fontsize=13, fontweight='bold', y=0.98
+    )
+
+    # Row 1: Distribution plots for T-Test and Mann-Whitney
+    ax1 = fig.add_subplot(3, 2, 1)
+    ax2 = fig.add_subplot(3, 2, 2)
+    # Row 2: Bar chart of p-values and verdict table
+    ax3 = fig.add_subplot(3, 2, 3)
+    ax4 = fig.add_subplot(3, 2, 4)
+    # Row 3: City mean temps (ANOVA context) and season boxplot
+    ax5 = fig.add_subplot(3, 2, 5)
+    ax6 = fig.add_subplot(3, 2, 6)
+
+    # ── Subplot 1: T-Test KDE — Delhi vs Bengaluru ────────────────────────
+    ax1.set_facecolor(CARD)
+    delhi_s   = delhi.sample(min(5000, len(delhi)), random_state=42)
+    beng_s    = bengaluru.sample(min(5000, len(bengaluru)), random_state=42)
+    sns.kdeplot(delhi_s,     ax=ax1, color=T4,  fill=True, alpha=0.4, label=f'Delhi  (μ={delhi.mean():.1f}°C)')
+    sns.kdeplot(beng_s,      ax=ax1, color=T3,  fill=True, alpha=0.4, label=f'Bengaluru (μ={bengaluru.mean():.1f}°C)')
+    verdict1 = "✅ Reject H₀" if results['ttest']['reject'] else "❌ Fail to Reject H₀"
+    ax1.axvline(delhi.mean(),     color=T4, linestyle='--', linewidth=1.5)
+    ax1.axvline(bengaluru.mean(), color=T3, linestyle='--', linewidth=1.5)
+    _sa(ax1, f"T-Test: Delhi vs Bengaluru\np={results['ttest']['p_value']} → {verdict1}", 'Temp (°C)', 'Density')
+    ax1.legend(facecolor=CARD, edgecolor=BORDER, labelcolor=TEXT, fontsize=8)
+
+    # ── Subplot 2: Mann-Whitney KDE — Monsoon vs Spring ───────────────────
+    ax2.set_facecolor(CARD)
+    mon_s = monsoon.sample(min(5000, len(monsoon)), random_state=42)
+    spr_s = spring.sample(min(5000, len(spring)),   random_state=42)
+    sns.kdeplot(mon_s, ax=ax2, color=T2,  fill=True, alpha=0.4, label=f'Monsoon (μ={monsoon.mean():.1f}°C)')
+    sns.kdeplot(spr_s, ax=ax2, color=T5,  fill=True, alpha=0.4, label=f'Spring  (μ={spring.mean():.1f}°C)')
+    verdict3 = "✅ Reject H₀" if results['mannwhitney']['reject'] else "❌ Fail to Reject H₀"
+    ax2.axvline(monsoon.mean(), color=T2, linestyle='--', linewidth=1.5)
+    ax2.axvline(spring.mean(),  color=T5, linestyle='--', linewidth=1.5)
+    _sa(ax2, f"Mann-Whitney: Monsoon vs Spring\np={results['mannwhitney']['p_value']} → {verdict3}", 'Temp (°C)', 'Density')
+    ax2.legend(facecolor=CARD, edgecolor=BORDER, labelcolor=TEXT, fontsize=8)
+
+    # ── Subplot 3: p-value comparison bar chart ────────────────────────────
+    ax3.set_facecolor(CARD)
+    test_labels = ['T-Test\n(Delhi vs\nBengaluru)', 'ANOVA\n(8 Cities)', 'Mann-Whitney\n(Monsoon vs\nSpring)', 'Chi-Square\n(City vs\nSeason)']
+    p_vals  = [results[k]['p_value'] for k in ['ttest','anova','mannwhitney','chisquare']]
+    colors  = [results[k]['color']   for k in ['ttest','anova','mannwhitney','chisquare']]
+    p_plot  = [min(p, 0.5) for p in p_vals]   # cap for display (very small p → invisible bar)
+    bars = ax3.bar(test_labels, p_plot, color=colors, width=0.5, edgecolor=BORDER, linewidth=0.8)
+    ax3.axhline(ALPHA, color='white', linewidth=1.8, linestyle='--', label=f'α = {ALPHA}')
+    for bar, pv in zip(bars, p_vals):
+        label = f'p={pv:.2e}' if pv < 0.001 else f'p={pv:.4f}'
+        ax3.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.005,
+                 label, ha='center', color=TEXT, fontsize=7.5, fontweight='bold')
+    _sa(ax3, '📊 p-value Comparison Across All Tests\n(bar below dashed line → Reject H₀)', 'Test', 'p-value')
+    ax3.legend(facecolor=CARD, edgecolor=BORDER, labelcolor=TEXT, fontsize=8)
+
+    # ── Subplot 4: Summary verdict table ──────────────────────────────────
+    ax4.set_facecolor(CARD)
+    ax4.axis('off')
+    table_data = []
+    for k in ['ttest','anova','mannwhitney','chisquare']:
+        r = results[k]
+        verdict = "REJECT H₀ ✅" if r['reject'] else "FAIL TO REJECT ❌"
+        sig     = "Significant" if r['reject'] else "Not Significant"
+        table_data.append([r['name'], f"{r['p_value']:.2e}", sig, verdict])
+    col_labels = ['Test', 'p-value', 'Result', 'Verdict']
+    tbl = ax4.table(
+        cellText=table_data, colLabels=col_labels,
+        loc='center', cellLoc='center'
+    )
+    tbl.auto_set_font_size(False); tbl.set_fontsize(8.5)
+    tbl.scale(1, 2.2)
+    for (row, col), cell in tbl.get_celld().items():
+        cell.set_facecolor(CARD2 if row > 0 else DIM)
+        cell.set_edgecolor(BORDER)
+        cell.set_text_props(color=TEXT, fontweight='bold' if row == 0 else 'normal')
+    ax4.set_title('📋 Hypothesis Test Summary Table', color=TEXT, fontsize=11, fontweight='bold', pad=12)
+
+    # ── Subplot 5: ANOVA context — city mean temps ─────────────────────────
+    ax5.set_facecolor(CARD)
+    city_means = df.groupby('city')['tempC'].mean().reindex(CITIES)
+    city_ci    = df.groupby('city')['tempC'].sem().reindex(CITIES) * 1.96   # 95% CI
+    bars5 = ax5.bar(CITIES, city_means, color=CITY_COLORS, width=0.6, edgecolor=BORDER, linewidth=0.7)
+    ax5.errorbar(CITIES, city_means, yerr=city_ci, fmt='none', color='white', capsize=4, linewidth=1.5)
+    grand_mean = df['tempC'].mean()
+    ax5.axhline(grand_mean, color=T4, linewidth=2, linestyle='--', label=f'Grand Mean = {grand_mean:.1f}°C')
+    for bar, val in zip(bars5, city_means):
+        ax5.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.2,
+                 f'{val:.1f}°C', ha='center', color=TEXT, fontsize=7.5, fontweight='bold')
+    verdict2 = "✅ Reject H₀" if results['anova']['reject'] else "❌ Fail to Reject H₀"
+    _sa(ax5, f"ANOVA: Mean Temp per City (F={results['anova']['stat']}, {verdict2})", 'City', 'Mean Temp (°C)')
+    ax5.tick_params(axis='x', rotation=30, colors=MUTED)
+    ax5.legend(facecolor=CARD, edgecolor=BORDER, labelcolor=TEXT, fontsize=8)
+
+    # ── Subplot 6: Season boxplot (Mann-Whitney context) ──────────────────
+    ax6.set_facecolor(CARD)
+    season_order = ['Winter','Spring','Monsoon','Autumn']
+    season_colors = [T3, T5, T2, T4]
+    sns.boxplot(
+        data=df[df['season'].isin(season_order)],
+        x='season', y='tempC', order=season_order,
+        palette=season_colors, ax=ax6, width=0.5
+    )
+    verdict3b = "✅ Reject H₀" if results['mannwhitney']['reject'] else "❌ Fail to Reject H₀"
+    _sa(ax6, f"Season-wise Temp Distribution\n(Mann-Whitney Monsoon vs Spring → {verdict3b})", 'Season', 'Temp (°C)')
+
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
+    _save(fig, 'hypothesis')
+
+    # Return structured results for views.py to use
+    return {k: {
+        'name'   : v['name'],
+        'H0'     : v['H0'],
+        'H1'     : v['H1'],
+        'stat'   : float(v['stat']),
+        'p_value': float(v['p_value']),
+        'reject' : int(bool(v['reject'])),     # 1/0 — always JSON serializable
+        'verdict': "Reject H₀ — Statistically Significant" if v['reject']
+                   else "Fail to Reject H₀ — Not Statistically Significant",
+    } for k, v in results.items()}
+
 
 def run_charts():
     print("Loading dataset…"); df = load_data(80000)
     print(f"  ✓ {len(df)} rows")
-    print("[1/5] Scatter"); chart_scatter(df)
-    print("[2/5] Line");    chart_line(df)
-    print("[3/5] Bar");     chart_bar(df)
-    print("[4/5] Heatmap"); chart_heatmap(df)
-    print("[5/5] Gradient"); chart_gradient(df)
+    print("[1/6] Scatter");     chart_scatter(df)
+    print("[2/6] Line");        chart_line(df)
+    print("[3/6] Bar");         chart_bar(df)
+    print("[4/6] Heatmap");     chart_heatmap(df)
+    print("[5/6] Boxplot");     chart_boxplot(df)
+    print("[6/6] Hypothesis");  hyp = chart_hypothesis(df)
     print("✅ Charts done.")
     return {
-        'total_rows':771264, 'total_cities':8, 'year_range':'2009–2019',
-        'mean_temp':round(float(df['tempC'].mean()),2),
-        'max_temp':round(float(df['maxtempC'].max()),1),
-        'min_temp':round(float(df['mintempC'].min()),1),
-        'mean_humidity':round(float(df['humidity'].mean()),1),
-        'hottest_city':df.groupby('city')['tempC'].mean().idxmax(),
-        'coolest_city':df.groupby('city')['tempC'].mean().idxmin(),
+        'total_rows'    : 771264,
+        'total_cities'  : 8,
+        'year_range'    : '2009–2019',
+        'mean_temp'     : round(float(df['tempC'].mean()), 2),
+        'max_temp'      : round(float(df['maxtempC'].max()), 1),
+        'min_temp'      : round(float(df['mintempC'].min()), 1),
+        'mean_humidity' : round(float(df['humidity'].mean()), 1),
+        'hottest_city'  : df.groupby('city')['tempC'].mean().idxmax(),
+        'coolest_city'  : df.groupby('city')['tempC'].mean().idxmin(),
+        'hypothesis'    : hyp,  # ← hypothesis results passed to frontend
     }
+
 
 # ── ML PREDICTION ENGINE ─────────────────────────────────────────────────────
 ALGO_MAP = {
@@ -281,8 +511,16 @@ def run_prediction(payload: dict) -> dict:
     plt.close(fig)
 
     return {
-        'algorithm':algo, 'r2':r2, 'rmse':rmse, 'mae':mae,
-        'importances':importances, 'user_prediction':user_prediction,
-        'target':target, 'train_size':len(X_train), 'test_size':len(X_test),
-        'features_used':len(features), 'scaler':scaler_t, 'hyperparams':valid,
+        'algorithm'     : algo,
+        'r2'            : r2,
+        'rmse'          : rmse,
+        'mae'           : mae,
+        'importances'   : importances,
+        'user_prediction': user_prediction,
+        'target'        : target,
+        'train_size'    : len(X_train),
+        'test_size'     : len(X_test),
+        'features_used' : len(features),
+        'scaler'        : scaler_t,
+        'hyperparams'   : valid,
     }

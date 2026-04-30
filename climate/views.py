@@ -30,5 +30,5 @@ def predict(request):
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
 def charts_ready(request):
-    names = ["scatter","line","bar","heatmap","gradient","residuals"]
+    names = ["scatter", "line", "bar", "heatmap", "boxplot", "hypothesis", "residuals"]
     return JsonResponse({c: os.path.exists(os.path.join(MEDIA_DIR, f"{c}.png")) for c in names})

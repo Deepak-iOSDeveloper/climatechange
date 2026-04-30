@@ -70,6 +70,19 @@ h1 em{font-style:italic;color:var(--t1)}
 .chart-tag{font-family:'DM Mono',monospace;font-size:9px;padding:3px 8px;border-radius:6px;border:1px solid var(--border);color:var(--muted);background:var(--s2)}
 .chart-img{padding:3px;background:var(--dark)}
 .chart-img img{width:100%;display:block;border-radius:11px;height:auto}
+/* Hypothesis results table */
+.hyp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;padding:18px;background:var(--s2);border-top:1px solid var(--border)}
+.hyp-card{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+.hyp-name{font-family:'DM Mono',monospace;font-size:10px;color:var(--t1);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.hyp-h0{font-size:11px;color:var(--muted);margin-bottom:4px;line-height:1.5}
+.hyp-h1{font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.5}
+.hyp-stats{display:flex;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+.hyp-stat{background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:5px 10px}
+.hyp-stat-val{font-family:'DM Mono',monospace;font-size:13px;color:var(--t3);font-weight:700}
+.hyp-stat-lbl{font-family:'DM Mono',monospace;font-size:9px;color:var(--dim);text-transform:uppercase}
+.hyp-verdict{font-size:12px;font-weight:700;padding:6px 12px;border-radius:8px;text-align:center}
+.hyp-verdict.reject{background:rgba(251,146,60,.15);border:1px solid rgba(251,146,60,.4);color:var(--t4)}
+.hyp-verdict.accept{background:rgba(45,212,170,.12);border:1px solid rgba(45,212,170,.3);color:var(--t1)}
 /* ML Panel */
 #ml-section{margin:52px 0 0}
 .ml-panel{background:var(--s1);border:1px solid var(--border);border-radius:18px;overflow:hidden}
@@ -129,7 +142,7 @@ footer{border-top:1px solid var(--border);padding:22px 0;margin-top:56px;display
 .fl:hover{color:var(--t1)}
 @keyframes up{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:900px){.ml-body{grid-template-columns:1fr}.input-grid{grid-template-columns:1fr 1fr}}
-@media(max-width:600px){.input-grid{grid-template-columns:1fr}}
+@media(max-width:600px){.input-grid{grid-template-columns:1fr}.hyp-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -148,7 +161,7 @@ footer{border-top:1px solid var(--border);padding:22px 0;margin-top:56px;display
   <div class="hero">
     <div class="hero-eye">India Weather Intelligence · Hourly Data</div>
     <h1>Climate Analytics &amp;<br><em>ML Prediction Lab</em></h1>
-    <p class="hero-body">Explore 771K hourly weather records across 8 major Indian cities. Visualise patterns with scatter, line, bar, heatmap &amp; KDE gradient charts. Then train any ML model with custom hyperparameters and predict temperature live.</p>
+    <p class="hero-body">Explore 771K hourly weather records across 8 major Indian cities. Visualise patterns with scatter, line, bar, heatmap &amp; boxplot charts. Then train any ML model with custom hyperparameters and predict temperature live.</p>
     <div class="hero-cta">
       <button class="btn-primary" id="run-btn" onclick="runCharts()"><span>⚡</span><span>Generate All Charts</span></button>
       <button class="btn-ghost" onclick="document.getElementById('ml-section').scrollIntoView({behavior:'smooth'})"><span>🤖</span><span>Jump to ML Predictor</span></button>
@@ -165,7 +178,8 @@ footer{border-top:1px solid var(--border);padding:22px 0;margin-top:56px;display
     <div class="step" id="s3"><span class="step-dot"></span>Line charts</div>
     <div class="step" id="s4"><span class="step-dot"></span>Bar charts</div>
     <div class="step" id="s5"><span class="step-dot"></span>Heatmap</div>
-    <div class="step" id="s6"><span class="step-dot"></span>KDE gradient maps</div>
+    <div class="step" id="s6"><span class="step-dot"></span>Boxplot (outliers)</div>
+    <div class="step" id="s7"><span class="step-dot"></span>Hypothesis Testing</div>
   </div>
 </div>
 
@@ -183,8 +197,8 @@ footer{border-top:1px solid var(--border);padding:22px 0;margin-top:56px;display
   <div class="eb">Click <strong>Generate All Charts</strong> to visualise 771,264 hourly weather records. Then use the ML Predictor below to train any model with custom hyperparameters.</div>
   <div class="tags">
     <span class="tag">📊 Scatter · Line · Bar</span><span class="tag">🔥 Correlation Heatmap</span>
-    <span class="tag">🌈 Seaborn KDE Gradients</span><span class="tag">🤖 7 ML Algorithms</span>
-    <span class="tag">⚙️ Hyperparameter Tuning</span><span class="tag">🔧 Preprocessing Pipeline</span>
+    <span class="tag">📦 Boxplot Outliers</span><span class="tag">🤖 7 ML Algorithms</span>
+    <span class="tag">⚙️ Hyperparameter Tuning</span><span class="tag">🔬 Hypothesis Testing</span>
   </div>
 </div>
 
@@ -222,16 +236,32 @@ footer{border-top:1px solid var(--border);padding:22px 0;margin-top:56px;display
     </div>
   </div>
   <div class="section">
-    <div class="sec-label">Chart 5 · Seaborn KDE Gradient Maps</div>
+    <div class="sec-label">Chart 5 · Boxplot (Outlier Detection)</div>
     <div class="sec-div"><div class="sec-line"></div></div>
     <div class="chart-full chart-card">
-      <div class="chart-head"><span class="chart-name">🌈 KDE Gradient — Seaborn Density Distributions</span><span class="chart-tag">KDE</span></div>
-      <div class="chart-img"><img id="img-gradient" src="" alt="Gradient"></div>
+      <div class="chart-head"><span class="chart-name">📦 Boxplot — Outlier Detection Across Climate Features</span><span class="chart-tag">BOXPLOT</span></div>
+      <div class="chart-img"><img id="img-boxplot" src="" alt="Boxplot"></div>
+    </div>
+  </div>
+
+  <!-- ── Chart 6 · Hypothesis Testing ─────────────────────────────── -->
+  <div class="section">
+    <div class="sec-label">Chart 6 · Hypothesis Testing</div>
+    <div class="sec-div"><div class="sec-line"></div></div>
+    <div class="chart-full chart-card">
+      <div class="chart-head">
+        <span class="chart-name">🔬 Statistical Inference — 4 Hypothesis Tests (α = 0.05)</span>
+        <span class="chart-tag">SCIPY STATS</span>
+      </div>
+      <div class="chart-img"><img id="img-hypothesis" src="" alt="Hypothesis Testing"></div>
+
+      <!-- Hypothesis result cards — rendered by JS after API call -->
+      <div id="hypothesis-results" style="display:none"></div>
     </div>
   </div>
 </div>
 
-<!-- ML PREDICTOR -->
+<!-- ── ML Section ──────────────────────────────────────────────────── -->
 <div id="ml-section">
   <div class="section">
     <div class="sec-label">Machine Learning Lab</div>
@@ -248,7 +278,6 @@ footer{border-top:1px solid var(--border);padding:22px 0;margin-top:56px;display
       <button class="btn-primary btn-sm" id="predict-btn" onclick="runPredict()"><span>🔮</span><span>Run Prediction</span></button>
     </div>
     <div class="ml-body">
-      <!-- LEFT -->
       <div>
         <div class="fsec">① Algorithm Selection</div>
         <div class="form-row">
@@ -288,7 +317,6 @@ footer{border-top:1px solid var(--border);padding:22px 0;margin-top:56px;display
           </select>
         </div>
       </div>
-      <!-- RIGHT -->
       <div>
         <div class="fsec">③ Input Feature Values <span style="color:var(--dim);font-weight:400">(for your prediction)</span></div>
         <div class="input-grid" id="input-grid"></div>
@@ -381,28 +409,102 @@ function getInputData(){
   return out;
 }
 
+// ── Render hypothesis result cards ──────────────────────────────────────────
+function renderHypothesis(hyp) {
+  const hDiv = document.getElementById('hypothesis-results');
+  if (!hyp || typeof hyp !== 'object') { hDiv.style.display='none'; return; }
+
+  // Map keys → friendly labels & emoji
+  const META = {
+    ttest:       { emoji:'🧪', label:'T-Test (Welch\'s)', subtitle:'Delhi vs Bengaluru temperature means' },
+    anova:       { emoji:'📊', label:'One-Way ANOVA',     subtitle:'All 8 cities — equal means?' },
+    mannwhitney: { emoji:'📈', label:'Mann-Whitney U',    subtitle:'Monsoon vs Spring distributions' },
+    chisquare:   { emoji:'🔲', label:'Chi-Square Test',   subtitle:'City vs Season — independent?' },
+  };
+
+  const cards = Object.entries(hyp).map(([key, t]) => {
+    const m       = META[key] || { emoji:'🔬', label: key, subtitle:'' };
+    const rejected = t.reject_int === 1 || t.reject === true;
+    const pFmt    = parseFloat(t.p_value) < 0.001
+                    ? parseFloat(t.p_value).toExponential(3)
+                    : parseFloat(t.p_value).toFixed(4);
+    const statFmt = parseFloat(t.stat).toFixed(4);
+    const verdictClass = rejected ? 'reject' : 'accept';
+    const verdictText  = rejected
+      ? '✅ Reject H₀ — Statistically Significant'
+      : '❌ Fail to Reject H₀ — Not Significant';
+
+    return `
+      <div class="hyp-card">
+        <div class="hyp-name">${m.emoji} ${m.label}</div>
+        <div style="font-size:10px;color:var(--t3);margin-bottom:6px;font-family:'DM Mono',monospace">${m.subtitle}</div>
+        <div class="hyp-h0">${t.H0}</div>
+        <div class="hyp-h1">${t.H1}</div>
+        <div class="hyp-stats">
+          <div class="hyp-stat">
+            <div class="hyp-stat-val">${pFmt}</div>
+            <div class="hyp-stat-lbl">p-value</div>
+          </div>
+          <div class="hyp-stat">
+            <div class="hyp-stat-val">${statFmt}</div>
+            <div class="hyp-stat-lbl">test stat</div>
+          </div>
+          <div class="hyp-stat">
+            <div class="hyp-stat-val">0.05</div>
+            <div class="hyp-stat-lbl">alpha (α)</div>
+          </div>
+        </div>
+        <div class="hyp-verdict ${verdictClass}">${verdictText}</div>
+      </div>`;
+  }).join('');
+
+  hDiv.innerHTML = `
+    <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--t1);
+                letter-spacing:.12em;text-transform:uppercase;padding:14px 18px 0;
+                border-top:1px solid var(--border)">
+      📋 Statistical Test Results — α = 0.05
+    </div>
+    <div class="hyp-grid">${cards}</div>`;
+  hDiv.style.display = 'block';
+}
+
 async function runCharts(){
   const btn=document.getElementById('run-btn'),prog=document.getElementById('progress-bar'),empty=document.getElementById('empty-state');
   btn.disabled=true;btn.innerHTML='<span>⏳</span><span>Generating…</span>';
   prog.style.display='block';empty.style.display='none';
-  const steps=['s1','s2','s3','s4','s5','s6'],pcts=[8,25,42,58,75,92];let si=0;
+
+  const steps=['s1','s2','s3','s4','s5','s6','s7'],pcts=[8,22,36,50,64,78,92];let si=0;
   const timer=setInterval(()=>{
     if(si>0)document.getElementById(steps[si-1]).className='step done';
     if(si<steps.length){document.getElementById(steps[si]).className='step active';document.getElementById('prog-fill').style.width=pcts[si]+'%';si++;}
     else clearInterval(timer);
-  },2000);
+  },1200);
+
   try{
-    const res=await fetch('/api/run/'),data=await res.json();
+    const res=await fetch('/api/run/');
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data=await res.json();
     clearInterval(timer);steps.forEach(s=>document.getElementById(s).className='step done');
     document.getElementById('prog-fill').style.width='100%';
     if(data.status==='ok'){
-      renderKPI(data.stats);refreshCharts();
+      renderKPI(data.stats);
+      refreshCharts();
+      // ── render hypothesis cards from the 4-test dict ──
+      if(data.stats.hypothesis) renderHypothesis(data.stats.hypothesis);
       document.getElementById('stats-section').style.display='block';
       document.getElementById('charts-section').style.display='block';
       prog.style.display='none';
       btn.innerHTML='<span>✅</span><span>Charts Ready</span>';btn.disabled=false;
-    }else{alert('Error: '+data.message);btn.innerHTML='<span>⚡</span><span>Retry</span>';btn.disabled=false;}
-  }catch(e){clearInterval(timer);alert('Server error — run: python manage.py runserver');btn.innerHTML='<span>⚡</span><span>Generate All Charts</span>';btn.disabled=false;}
+    }else{
+      alert('Error: '+(data.message||'Unknown error'));
+      btn.innerHTML='<span>⚡</span><span>Retry</span>';btn.disabled=false;
+    }
+  }catch(e){
+    clearInterval(timer);
+    console.error('runCharts error:', e);
+    alert('Server error: '+e.message+'\nCheck Django console for details.');
+    btn.innerHTML='<span>⚡</span><span>Generate All Charts</span>';btn.disabled=false;
+  }
 }
 
 function renderKPI(s){
@@ -423,7 +525,11 @@ function renderKPI(s){
 
 function refreshCharts(){
   const t=Date.now();
-  ['scatter','line','bar','heatmap','gradient'].forEach(n=>{const img=document.getElementById('img-'+n);if(img)img.src=`/media/charts/${n}.png?t=${t}`;});
+  // ⚠️  img id="img-hypothesis" matches the filename "hypothesis.png" from analysis.py
+  ['scatter','line','bar','heatmap','boxplot','hypothesis'].forEach(n=>{
+    const img=document.getElementById('img-'+n);
+    if(img) img.src=`/media/charts/${n}.png?t=${t}`;
+  });
 }
 
 async function runPredict(){
@@ -439,10 +545,15 @@ async function runPredict(){
   };
   try{
     const res=await fetch('/api/predict/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
     const data=await res.json();
     if(data.status==='ok'){renderResult(data.result);btn.innerHTML='<span>🔮</span><span>Run Again</span>';btn.disabled=false;}
-    else{alert('Error: '+data.message);btn.innerHTML='<span>🔮</span><span>Run Prediction</span>';btn.disabled=false;}
-  }catch(e){alert('Server error');btn.innerHTML='<span>🔮</span><span>Run Prediction</span>';btn.disabled=false;}
+    else{alert('Error: '+(data.message||'Unknown'));btn.innerHTML='<span>🔮</span><span>Run Prediction</span>';btn.disabled=false;}
+  }catch(e){
+    console.error('runPredict error:',e);
+    alert('Server error: '+e.message);
+    btn.innerHTML='<span>🔮</span><span>Run Prediction</span>';btn.disabled=false;
+  }
 }
 
 function renderResult(r){
